@@ -4,10 +4,11 @@
 #include "Components/StaticMeshComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "GameFramework/PlayerController.h"
 #include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerController.h"
 #include "InputActionValue.h"
-
+#include "UI/AmmoHealthWidget.h"
+#include "Blueprint/UserWidget.h"
 AStaticMeshCharacter::AStaticMeshCharacter()
 {
     PrimaryActorTick.bCanEverTick = false;
@@ -27,6 +28,8 @@ AStaticMeshCharacter::AStaticMeshCharacter()
     CurrentAmmo = MaxAmmo;
     CurrentHealth = MaxHealth;
 
+    StatusWidget = nullptr;
+
     AutoPossessPlayer = EAutoReceiveInput::Player0;
 }
 
@@ -36,9 +39,6 @@ void AStaticMeshCharacter::BeginPlay()
 
     CurrentAmmo = FMath::Clamp(CurrentAmmo, 0, MaxAmmo);
     CurrentHealth = FMath::Clamp(CurrentHealth, 0.f, MaxHealth);
-
-    BroadcastAmmoChanged();
-    BroadcastHealthChanged();
 
     if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
     {
@@ -52,7 +52,12 @@ void AStaticMeshCharacter::BeginPlay()
                 }
             }
         }
+
+        CreateStatusWidget();
     }
+
+    BroadcastAmmoChanged();
+    BroadcastHealthChanged();
 }
 
 void AStaticMeshCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -165,12 +170,54 @@ void AStaticMeshCharacter::ConsumeHealth(float Amount)
     }
 }
 
-void AStaticMeshCharacter::BroadcastAmmoChanged() const
+void AStaticMeshCharacter::CreateStatusWidget()
 {
-    OnAmmoChanged.Broadcast(CurrentAmmo, MaxAmmo);
+    if (StatusWidget)
+    {
+        return;
+    }
+
+    APlayerController* PlayerController = Cast<APlayerController>(GetController());
+    if (!PlayerController || !PlayerController->IsLocalController())
+    {
+        return;
+    }
+
+    if (UAmmoHealthWidget* NewWidget = CreateWidget<UAmmoHealthWidget>(PlayerController, UAmmoHealthWidget::StaticClass()))
+    {
+        StatusWidget = NewWidget;
+        StatusWidget->AddToViewport();
+        StatusWidget->SetAmmo(CurrentAmmo, MaxAmmo);
+        StatusWidget->SetHealth(CurrentHealth, MaxHealth);
+    }
 }
 
-void AStaticMeshCharacter::BroadcastHealthChanged() const
+void AStaticMeshCharacter::BroadcastAmmoChanged()
+{
+    OnAmmoChanged.Broadcast(CurrentAmmo, MaxAmmo);
+
+    if (!StatusWidget)
+    {
+        CreateStatusWidget();
+    }
+
+    if (StatusWidget)
+    {
+        StatusWidget->SetAmmo(CurrentAmmo, MaxAmmo);
+    }
+}
+
+void AStaticMeshCharacter::BroadcastHealthChanged()
 {
     OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+
+    if (!StatusWidget)
+    {
+        CreateStatusWidget();
+    }
+
+    if (StatusWidget)
+    {
+        StatusWidget->SetHealth(CurrentHealth, MaxHealth);
+    }
 }

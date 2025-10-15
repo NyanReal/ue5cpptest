@@ -10,6 +10,7 @@ class UCapsuleComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class UAmmoHealthWidget;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoChanged, int32, NewAmmo, int32, MaxAmmo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float, NewHealth, float, MaxHealth);
@@ -106,8 +107,9 @@ private:
     void ConsumeAmmo(int32 Amount);
     void ConsumeHealth(float Amount);
 
-    void BroadcastAmmoChanged() const;
-    void BroadcastHealthChanged() const;
+    void BroadcastAmmoChanged();
+    void BroadcastHealthChanged();
+    void CreateStatusWidget();
 
     /** Tracked ammo value updated when firing/reloading. */
     UPROPERTY(VisibleInstanceOnly, Category = "Status", meta = (ClampMin = "0"))
@@ -116,4 +118,8 @@ private:
     /** Tracked health value updated when breathing or healing. */
     UPROPERTY(VisibleInstanceOnly, Category = "Status", meta = (ClampMin = "0.0"))
     float CurrentHealth;
+
+    /** HUD widget that mirrors ammo/health stats. */
+    UPROPERTY(Transient)
+    UAmmoHealthWidget* StatusWidget;
 };

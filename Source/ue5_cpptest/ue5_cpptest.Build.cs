@@ -13,7 +13,8 @@ public class ue5_cpptest : ModuleRules
             {
                 "Core",
                 "EnhancedInput",
-                "InputCore"
+                "InputCore",
+                "UMG"
             }
         );
 
@@ -21,7 +22,9 @@ public class ue5_cpptest : ModuleRules
             new string[]
             {
                 "CoreUObject",
-                "Engine"
+                "Engine",
+                "Slate",
+                "SlateCore"
             }
         );
     }
